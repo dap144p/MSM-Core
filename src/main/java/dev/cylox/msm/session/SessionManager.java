@@ -35,6 +35,14 @@ public final class SessionManager {
         return Optional.ofNullable(sessions.get(sessionId));
     }
 
+    public synchronized Optional<Session> findByProfile(SessionProfile profile) {
+        if (profile == null) return Optional.empty();
+        for (Session session : sessions.values()) {
+            if (session.getProfile().equals(profile)) return Optional.of(session);
+        }
+        return Optional.empty();
+    }
+
     public synchronized List<Session> getSessions() {
         return Collections.unmodifiableList(new ArrayList<Session>(sessions.values()));
     }
