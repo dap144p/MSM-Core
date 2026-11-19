@@ -10,6 +10,9 @@ public final class SessionManagerTest {
 
         check(first.getState() == SessionState.OFFLINE, "New session must be offline");
         check(manager.find(first.getId()).isPresent(), "Created session must be findable");
+        check(manager.findByProfile(firstProfile).isPresent(), "Session must be findable by profile");
+        check(!manager.findByProfile(new SessionProfile("OtherPlayer", "play.example.net")).isPresent(),
+                "Unknown profile must not be found");
         expectIllegalArgument(new Action() {
             @Override
             public void run() {
