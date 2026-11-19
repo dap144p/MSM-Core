@@ -9,14 +9,15 @@ MSM Core owns reusable domain logic and persistence. Minecraft/Fabric UI hooks a
 ## Current implementation
 
 - `profile`: validated local session profile model and atomic properties-file persistence.
+- `session`: in-memory registry for up to 20 managed session slots, immutable session snapshots, and validated lifecycle state transitions.
 - Java 8 bytecode compatibility.
 - No Minecraft, Fabric, authentication, or network dependency.
 - No passwords, Microsoft credentials, access tokens, or session cookies are stored.
-- Profiles are metadata only; they do not establish additional Minecraft connections.
+- Session slots and their status are runtime-only; they do not establish additional Minecraft connections.
 
 ## Planned packages
 
-Future features will be added incrementally under separate packages such as `account`, `session`, and `network`. Those features are not implemented yet.
+Future features will be added incrementally under separate packages such as `account`, `network`, and `integration`. Authentication and independent network connections are not implemented yet.
 
 ## Build and verify
 
@@ -26,4 +27,4 @@ Requires JDK 17 and Gradle 8.7 (or the root project's wrapper).
 gradle clean check
 ```
 
-The profile persistence smoke test runs as part of `check`.
+The `check` task runs the profile persistence and session registry smoke tests.
