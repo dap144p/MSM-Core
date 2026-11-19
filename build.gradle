@@ -1,0 +1,23 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'dev.cylox'
+version = '0.1.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 8
+}
+
+tasks.register('verifyProfileStore', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.cylox.msm.profile.SessionProfileStoreTest'
+}
+
+check.dependsOn verifyProfileStore
