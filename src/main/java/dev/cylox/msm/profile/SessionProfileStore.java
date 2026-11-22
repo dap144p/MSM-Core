@@ -43,7 +43,8 @@ public final class SessionProfileStore {
             try {
                 profiles.add(new SessionProfile(
                         properties.getProperty(prefix + "username"),
-                        properties.getProperty(prefix + "server")));
+                        properties.getProperty(prefix + "server"),
+                        SessionAuthMode.fromStoredValue(properties.getProperty(prefix + "authMode"))));
             } catch (IllegalArgumentException exception) {
                 throw new IOException("Invalid saved profile at index " + index, exception);
             }
@@ -64,6 +65,7 @@ public final class SessionProfileStore {
             String prefix = "profile." + index + ".";
             properties.setProperty(prefix + "username", profile.getUsername());
             properties.setProperty(prefix + "server", profile.getServerAddress());
+            properties.setProperty(prefix + "authMode", profile.getAuthMode().name());
         }
 
         Path parent = file.toAbsolutePath().getParent();
