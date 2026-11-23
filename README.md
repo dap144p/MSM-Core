@@ -1,10 +1,12 @@
-# MSM Core
+# MSM-Core
 
-Shared, Minecraft-independent core library for the MSM Fabric client.
+**MSM-Core** is the shared, Minecraft-independent Java library used by **Multi Sessions Manager (MSM)**, the client-side Fabric mod.
 
 ## Scope
 
-MSM Core owns reusable domain logic and persistence. Minecraft/Fabric UI hooks and client integration remain in `MSM-Fabric-1.14.4`. The Fabric mod packages the Core classes into its final mod JAR, so players install one mod.
+MSM-Core owns reusable profile, session-domain, and persistence logic. Minecraft/Fabric UI hooks and client integration remain in [MSM-Fabric](https://github.com/dap144p/Multi-Sessions-Manager-Fabric).
+
+The two Minecraft-specific MSM-Fabric builds (1.14.4 and 1.21.8) embed the required MSM-Core classes into their own mod JARs. Players install only the single MSM-Fabric JAR matching their Minecraft version; MSM-Core is not a separate mod to install.
 
 ## Current implementation
 
@@ -28,7 +30,7 @@ Independent network connections, authentication handoff, and session controls wi
 
 ## Build and verify
 
-Requires JDK 17 and Gradle 8.7 (or the root project's wrapper).
+Requires JDK 17 and Gradle 8.7 (or the MSM-Fabric root project's wrapper).
 
 ```sh
 gradle clean check
