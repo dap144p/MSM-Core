@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Properties;
 
 public final class SessionProfileStore {
-    private static final int MAX_PROFILES = 100;
     private final Path file;
 
     public SessionProfileStore(Path file) {
@@ -35,9 +34,13 @@ public final class SessionProfileStore {
         } catch (NumberFormatException exception) {
             throw new IOException("Invalid profile count", exception);
         }
-        if (count < 0 || count > MAX_PROFILES) throw new IOException("Profile count is out of range");
+        // Every stored profile must have at least a username and server property.
+        // This also rejects corrupted huge counts before iterating or allocating from them.
+        if (count < 0 || count > properties.size() / 2) {
+            throw new IOException("Profile count does not match the stored profile entries");
+        }
 
-        List<SessionProfile> profiles = new ArrayList<SessionProfile>(count);
+        List<SessionProfile> profiles = new ArrayList<SessionProfile>();
         for (int index = 0; index < count; index++) {
             String prefix = "profile." + index + ".";
             try {
@@ -53,8 +56,8 @@ public final class SessionProfileStore {
     }
 
     public void save(List<SessionProfile> profiles) throws IOException {
-        if (profiles == null || profiles.size() > MAX_PROFILES) {
-            throw new IllegalArgumentException("Profile list must contain 0-" + MAX_PROFILES + " entries");
+        if (profiles == null) {
+            throw new IllegalArgumentException("Profile list is required");
         }
 
         Properties properties = new Properties();
