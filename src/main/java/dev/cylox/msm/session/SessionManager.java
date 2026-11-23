@@ -10,15 +10,20 @@ import java.util.Map;
 import java.util.Optional;
 
 public final class SessionManager {
-    public static final int MAX_SESSIONS = 20;
+    /**
+     * Kept for source compatibility. Session count is no longer capped by MSM;
+     * practical limits are determined by available resources and server policy.
+     */
+    @Deprecated
+    public static final int MAX_SESSIONS = Integer.MAX_VALUE;
 
     private final Map<Long, Session> sessions = new LinkedHashMap<Long, Session>();
     private long nextId = 1L;
 
     public synchronized Session create(SessionProfile profile) {
         if (profile == null) throw new IllegalArgumentException("Session profile is required");
-        if (sessions.size() >= MAX_SESSIONS) {
-            throw new IllegalStateException("Session limit reached (" + MAX_SESSIONS + ")");
+        if (sessions.size() == Integer.MAX_VALUE) {
+            throw new IllegalStateException("The Java collection has reached its maximum capacity");
         }
         for (Session session : sessions.values()) {
             if (session.getProfile().equals(profile)) {
@@ -76,8 +81,11 @@ public final class SessionManager {
         return sessions.size();
     }
 
+    /**
+     * Returns the remaining representable collection capacity, not a configured user limit.
+     */
     public synchronized int remainingCapacity() {
-        return MAX_SESSIONS - sessions.size();
+        return Integer.MAX_VALUE - sessions.size();
     }
 
     public static final class Session {
