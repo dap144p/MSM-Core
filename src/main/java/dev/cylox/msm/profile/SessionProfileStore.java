@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -13,7 +14,6 @@ import java.util.List;
 import java.util.Properties;
 
 public final class SessionProfileStore {
-    private static final int MAX_PROFILES = 100;
     private final Path file;
 
     public SessionProfileStore(Path file) {
@@ -22,22 +22,40 @@ public final class SessionProfileStore {
     }
 
     public List<SessionProfile> load() throws IOException {
-        if (!Files.exists(file)) return Collections.emptyList();
+        InputStream input;
+        try {
+            input = Files.newInputStream(file);
+        } catch (NoSuchFileException exception) {
+            // A dangling symlink is an existing broken store, not a new profile file.
+            if (Files.isSymbolicLink(file)) throw exception;
+            return Collections.emptyList();
+        }
 
         Properties properties = new Properties();
-        try (InputStream input = Files.newInputStream(file)) {
-            properties.load(input);
+        try (InputStream opened = input) {
+            try {
+                properties.load(opened);
+            } catch (IllegalArgumentException exception) {
+                throw new IOException("Invalid profile properties", exception);
+            }
         }
+
+        String storedCount = properties.getProperty("profile.count");
+        if (storedCount == null) throw new IOException("Missing profile count");
 
         int count;
         try {
-            count = Integer.parseInt(properties.getProperty("profile.count", "0"));
+            count = Integer.parseInt(storedCount);
         } catch (NumberFormatException exception) {
             throw new IOException("Invalid profile count", exception);
         }
-        if (count < 0 || count > MAX_PROFILES) throw new IOException("Profile count is out of range");
+        // Each profile requires at least a username and server property. This
+        // prevents corrupt counts from causing large allocations or long loops.
+        if (count < 0 || count > properties.size() / 2) {
+            throw new IOException("Profile count does not match the stored profile entries");
+        }
 
-        List<SessionProfile> profiles = new ArrayList<SessionProfile>(count);
+        List<SessionProfile> profiles = new ArrayList<SessionProfile>();
         for (int index = 0; index < count; index++) {
             String prefix = "profile." + index + ".";
             try {
@@ -53,8 +71,8 @@ public final class SessionProfileStore {
     }
 
     public void save(List<SessionProfile> profiles) throws IOException {
-        if (profiles == null || profiles.size() > MAX_PROFILES) {
-            throw new IllegalArgumentException("Profile list must contain 0-" + MAX_PROFILES + " entries");
+        if (profiles == null) {
+            throw new IllegalArgumentException("Profile list is required");
         }
 
         Properties properties = new Properties();
@@ -73,7 +91,7 @@ public final class SessionProfileStore {
         Path temporary = Files.createTempFile(parent, "msm-profiles-", ".tmp");
         try {
             try (OutputStream output = Files.newOutputStream(temporary)) {
-                properties.store(output, "Cylox Multi Session Manager profiles; credentials are not stored");
+                properties.store(output, "MSM profiles; credentials are not stored");
             }
             try {
                 Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
