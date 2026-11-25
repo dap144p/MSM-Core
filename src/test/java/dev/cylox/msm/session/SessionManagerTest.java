@@ -13,6 +13,7 @@ public final class SessionManagerTest {
         check(manager.findByProfile(firstProfile).isPresent(), "Session must be findable by profile");
         check(!manager.findByProfile(new SessionProfile("OtherPlayer", "play.example.net")).isPresent(),
                 "Unknown profile must not be found");
+        check(!manager.findByProfile(null).isPresent(), "Null profile lookup must be empty");
         expectIllegalArgument(new Action() {
             @Override
             public void run() {
@@ -39,17 +40,11 @@ public final class SessionManagerTest {
         check(manager.remove(first.getId()), "Disconnected session must be removable");
         check(!manager.find(first.getId()).isPresent(), "Removed session must not be findable");
 
-        for (int index = 0; index < SessionManager.MAX_SESSIONS; index++) {
+        for (int index = 0; index < 128; index++) {
             manager.create(new SessionProfile("Player" + index, "server" + index + ".example.net"));
         }
-        check(manager.size() == SessionManager.MAX_SESSIONS, "Manager must accept 20 sessions");
-        check(manager.remainingCapacity() == 0, "Capacity must be zero when full");
-        expectIllegalState(new Action() {
-            @Override
-            public void run() {
-                manager.create(new SessionProfile("PlayerExtra", "extra.example.net"));
-            }
-        }, "Session 21 must be rejected");
+        check(manager.size() == 128, "Manager must accept more than the previous 20-session limit");
+        check(manager.remainingCapacity() > 0, "Manager must not impose a fixed session limit");
 
         System.out.println("SessionManagerTest: PASS");
     }

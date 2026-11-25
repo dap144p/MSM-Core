@@ -10,12 +10,12 @@ public enum SessionAuthMode {
     MICROSOFT,
     OFFLINE_LOCAL;
 
+    /**
+     * Missing values belong to legacy profiles and default to Microsoft.
+     * Explicit blank or unknown values are rejected to prevent silent data loss.
+     */
     public static SessionAuthMode fromStoredValue(String value) {
-        if (value == null || value.trim().isEmpty()) return MICROSOFT;
-        try {
-            return valueOf(value.trim().toUpperCase(java.util.Locale.ROOT));
-        } catch (IllegalArgumentException exception) {
-            return MICROSOFT;
-        }
+        if (value == null) return MICROSOFT;
+        return valueOf(value.trim().toUpperCase(java.util.Locale.ROOT));
     }
 }
