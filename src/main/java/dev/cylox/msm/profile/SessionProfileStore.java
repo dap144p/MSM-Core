@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -22,16 +23,29 @@ public final class SessionProfileStore {
     }
 
     public List<SessionProfile> load() throws IOException {
-        if (!Files.exists(file)) return Collections.emptyList();
-
-        Properties properties = new Properties();
-        try (InputStream input = Files.newInputStream(file)) {
-            properties.load(input);
+        InputStream input;
+        try {
+            input = Files.newInputStream(file);
+        } catch (NoSuchFileException exception) {
+            // A dangling symlink is an existing, broken store, not a new one.
+            if (Files.isSymbolicLink(file)) throw exception;
+            return Collections.emptyList();
         }
 
+        Properties properties = new Properties();
+        try (InputStream opened = input) {
+            try {
+                properties.load(opened);
+            } catch (IllegalArgumentException exception) {
+                throw new IOException("Invalid profile properties", exception);
+            }
+        }
+
+        String storedCount = properties.getProperty("profile.count");
+        if (storedCount == null) throw new IOException("Missing profile count");
         int count;
         try {
-            count = Integer.parseInt(properties.getProperty("profile.count", "0"));
+            count = Integer.parseInt(storedCount);
         } catch (NumberFormatException exception) {
             throw new IOException("Invalid profile count", exception);
         }

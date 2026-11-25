@@ -20,7 +20,11 @@ MSM Core owns reusable domain logic and persistence. Minecraft/Fabric UI hooks a
 - `MICROSOFT`: profile expects a legitimate Microsoft-authenticated Minecraft identity.
 - `OFFLINE_LOCAL`: profile is intended for a local/offline-mode server operated or explicitly configured by the player. It is not a way to bypass online-mode authentication.
 
-Existing profile files without an `authMode` property load as `MICROSOFT` for compatibility and safer defaults.
+Existing profile files without an `authMode` property load as `MICROSOFT` for compatibility and safer defaults. An explicit blank or unrecognized `authMode` is rejected rather than silently replaced. Known mode values are case-insensitive and may have surrounding whitespace.
+
+## Profile loading errors
+
+A missing profile file loads as an empty list. An existing file must contain a valid `profile.count` and valid entries; malformed properties and unknown authentication modes are reported as `IOException`. Loading a bad file does not modify it. Integrations should report the error and avoid saving an empty list over the file; back it up before attempting recovery. An older version may not recognize modes saved by a newer version.
 
 ## Planned packages
 
