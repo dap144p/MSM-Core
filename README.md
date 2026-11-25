@@ -38,4 +38,6 @@ Requires JDK 17 and Gradle 8.7 (or the root project's wrapper).
 gradle clean check
 ```
 
-The `check` task runs the profile persistence and session registry smoke tests.
+The `check` task runs the profile persistence and session registry smoke tests. These are standalone Java programs wired into `check`, not conventional test-framework tests, so running `gradle test` alone does not run them.
+
+GitHub Actions also runs `gradle clean check` with JDK 17 and Gradle 8.7 on pushes and pull requests.
