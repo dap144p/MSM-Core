@@ -51,7 +51,8 @@ public final class SessionProfileStore {
         }
         // Each profile requires at least a username and server property. This
         // prevents corrupt counts from causing large allocations or long loops.
-        if (count < 0 || count > properties.size() / 2) {
+        if (count < 0) throw new IOException("Profile count is out of range");
+        if (count > properties.size() / 2) {
             throw new IOException("Profile count does not match the stored profile entries");
         }
 
