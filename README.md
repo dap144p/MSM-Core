@@ -1,39 +1,50 @@
 # MSM-Core
 
-**MSM-Core** is the shared, Minecraft-independent Java library used by **Multi Sessions Manager (MSM)**, the client-side Fabric mod.
+**MSM-Core** is the shared, Minecraft-independent Java library used by **Multi Sessions Manager (MSM)**.
 
-## Scope
+## Project structure
 
-MSM-Core owns reusable profile, session-domain, and persistence logic. Minecraft/Fabric UI hooks and client integration remain in [MSM-Fabric](https://github.com/dap144p/Multi-Sessions-Manager-Fabric).
+```text
+MSM-Core/
+├── src/main/java/dev/cylox/msm/
+│   ├── profile/    # Profile model, auth-mode metadata, persistence
+│   └── session/    # Session registry, immutable snapshots, lifecycle states
+└── src/test/java/dev/cylox/msm/
+    ├── profile/
+    └── session/
+```
 
-The two Minecraft-specific MSM-Fabric builds (1.14.4 and 1.21.8) embed the required MSM-Core classes into their own mod JARs. Players install only the single MSM-Fabric JAR matching their Minecraft version; MSM-Core is not a separate mod to install.
+Keep platform-independent domain logic here. Minecraft/Fabric screens, input handling, and version-specific networking belong in [MSM-Fabric](https://github.com/dap144p/Multi-Sessions-Manager-Fabric).
+
+The two MSM-Fabric builds (Minecraft 1.14.4 and 1.21.8) consume this repository as a Git submodule and embed the required Core classes in their own mod JARs. **Players do not install MSM-Core separately**; they install only the matching MSM-Fabric JAR.
 
 ## Current implementation
 
-- `profile`: validated local session profile model, persisted authentication-mode selection, and atomic properties-file persistence.
-- `session`: in-memory registry for up to 20 managed session slots, immutable session snapshots, and validated lifecycle state transitions.
-- Java 8 bytecode compatibility.
-- No Minecraft, Fabric, authentication, or network dependency.
-- No passwords, Microsoft credentials, access tokens, or session cookies are stored.
-- Session slots and their status are runtime-only; selecting an authentication mode does not authenticate or connect a session.
+- **Profiles:** validated username/server data and a persisted authentication-mode selection.
+- **Persistence:** Java Properties format with temporary-file writes and atomic replacement when supported.
+- **Sessions:** in-memory registry, unique session IDs, immutable session snapshots, profile lookup, and validated lifecycle transitions.
+- **Compatibility:** Java 8 bytecode; no Minecraft, Fabric, authentication, or network dependency.
+- **Data handling:** no passwords, Microsoft credentials, access tokens, or session cookies are stored.
+
+MSM-Core does not impose an arbitrary maximum number of saved profiles or managed sessions. Actual capacity remains bounded by available memory and Java collection limits. Session state is runtime-only; choosing an authentication mode does not authenticate or connect a session.
 
 ## Authentication modes
 
-- `MICROSOFT`: profile expects a legitimate Microsoft-authenticated Minecraft identity.
-- `OFFLINE_LOCAL`: profile is intended for a local/offline-mode server operated or explicitly configured by the player. It is not a way to bypass online-mode authentication.
+- `MICROSOFT`: the profile expects a legitimate Microsoft-authenticated Minecraft identity.
+- `OFFLINE_LOCAL`: the profile is intended for a local/offline-mode server operated or explicitly configured by the player. It does not bypass online-mode authentication.
 
-Existing profile files without an `authMode` property load as `MICROSOFT` for compatibility and safer defaults.
+Legacy profile files without an `authMode` property default to `MICROSOFT`. An explicitly blank or unknown mode is rejected instead of silently replaced. A malformed profile file raises `IOException`; integrations should report the error and must not overwrite the file with an empty profile list as automatic recovery.
 
-## Planned packages
+## Not implemented in Core
 
-Independent network connections, authentication handoff, and session controls will be added incrementally under separate packages such as `account`, `network`, and `integration`. Actual Microsoft sign-in and network connections are not implemented yet.
+Microsoft sign-in, token handling, independent network connections, chat, reconnect logic, Minecraft UI, and session controls are integration responsibilities. They are not implemented by this library merely because a profile or runtime session exists.
 
 ## Build and verify
 
-Requires JDK 17 and Gradle 8.7 (or the MSM-Fabric root project's wrapper).
+Requires JDK 17 and Gradle 8.7 (or the MSM-Fabric root project's Gradle wrapper).
 
 ```sh
 gradle clean check
 ```
 
-The `check` task runs the profile persistence and session registry smoke tests.
+The `check` task compiles Java 8-compatible classes and runs the profile persistence and session registry tests.
